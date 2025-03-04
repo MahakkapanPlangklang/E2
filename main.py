@@ -23,20 +23,18 @@ def predict():
         print(f"🔍 LabelEncoder for sex: {label_encoders['sex'].classes_}")
         print(f"🔍 LabelEncoder for island: {label_encoders['island'].classes_}")
 
-        if data["sex"] not in label_encoders["sex"].classes_:
-            print(f"Invalid sex value received: {data['sex']}")
-            return jsonify({
-                "error": f"Invalid sex value: {data['sex']}, must be one of {label_encoders['sex'].classes_}"
-            }), 400
-
-        if data["island"] not in label_encoders["island"].classes_:
+        island_mapping = {0: "Biscoe", 1: "Dream", 2: "Torgersen"}
+        
+        island_name = island_mapping.get(int(data["island"]), None)
+        
+        if not island_name:
             print(f"Invalid island value received: {data['island']}")
             return jsonify({
-                "error": f"Invalid island value: {data['island']}, must be one of {label_encoders['island'].classes_}"
+                "error": f"Invalid island value: {data['island']}, must be one of {list(island_mapping.values())}"
             }), 400
 
         encoded_sex = label_encoders["sex"].transform([data["sex"]])[0]
-        encoded_island = label_encoders["island"].transform([data["island"]])[0]
+        encoded_island = label_encoders["island"].transform([island_name])[0]
 
         print(f"Encoded sex: {encoded_sex}")
         print(f"Encoded island: {encoded_island}")
