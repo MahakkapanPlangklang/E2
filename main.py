@@ -1,11 +1,16 @@
 import joblib
 import numpy as np
+import pandas as pd
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 final_model = joblib.load("best_model.pkl")
 model = final_model["model"]
 label_encoders = final_model["label_encoders"]
+
+feature_names = [
+    "bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g", "sex", "island"
+]
 
 app = Flask(__name__)
 CORS(app)
@@ -23,22 +28,12 @@ def predict():
         print(f"🔍 LabelEncoder for sex: {label_encoders['sex'].classes_}")
         print(f"🔍 LabelEncoder for island: {label_encoders['island'].classes_}")
 
-        island_value = data["island"]
-
-        island_mapping = {0: "Biscoe", 1: "Dream", 2: "Torgersen"}
-
-        if isinstance(island_value, str):
-            island_name = island_value
-        elif isinstance(island_value, int):
-            island_name = island_mapping.get(island_value, None)
-        else:
-            return jsonify({"error": "Invalid island value"}), 400
-        
+        island_name = data["island"]
         if island_name not in label_encoders["island"].classes_:
             return jsonify({
                 "error": f"Invalid island value: {island_name}, must be one of {list(label_encoders['island'].classes_)}"
             }), 400
-        
+
         encoded_sex = label_encoders["sex"].transform([data["sex"]])[0]
         encoded_island = label_encoders["island"].transform([island_name])[0]
 
@@ -55,8 +50,9 @@ def predict():
         ]
         print(f"Features: {features}")
 
-        features_array = np.array([features]).reshape(1, -1)
-        prediction = model.predict(features_array)
+        features_df = pd.DataFrame([features], columns=feature_names)
+
+        prediction = model.predict(features_df)
         species_predicted = label_encoders["species"].inverse_transform([prediction[0]])[0]
 
         print(f"Prediction: {species_predicted}")
